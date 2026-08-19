@@ -64,11 +64,12 @@
 
       * TABLES
        01 WS-EMP-TABLE.
-         05 WS-EMP-COUNT       PIC 9(3).
-         05 WS-EMP-ENTRY       OCCURS 2 TIMES 
+         05 WS-EMP-COUNT       PIC 9(3) VALUE ZERO.
+         05 WS-EMP-ENTRY       OCCURS 1 TO 500 TIMES
+                               DEPENDING ON WS-EMP-COUNT
                                ASCENDING KEY IS TB-ID
                                INDEXED BY TB-IDX.
-           10 TB-ID        PIC 9(06).
+           10 TB-ID            PIC 9(06).
            10 TB-NAME          PIC X(40).
            10 TB-DEP           PIC X(10).
            10 TB-ROLE          PIC X(20).
