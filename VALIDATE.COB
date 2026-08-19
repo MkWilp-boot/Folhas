@@ -58,6 +58,10 @@
          88 END-EARQ-EMP           VALUE 'Y'.
          88 NOT-END-EARQ-EMP       VALUE 'N'.
 
+       01 WS-END-EARQ-MOVE         PIC X(01).
+         88 END-EARQ-MOVE          VALUE 'Y'.
+         88 NOT-END-EARQ-MOVE      VALUE 'N'.
+
       * FILE HANDLING ERRORS 
        01 WS-ERR-DESC      PIC A(30) VALUES SPACES.
        01 WS-ERR-STATUS    PIC 9(02) VALUE ZERO.
@@ -132,25 +136,48 @@
            PERFORM UNTIL END-EARQ-EMP
              READ EARQ-EMP
                AT END SET END-EARQ-EMP TO TRUE
-               NOT AT END
-                 ADD 1 TO WS-EMP-COUNT OF WS-EMP-TABLE
-      * MOVING FIELDS TO TABLE
-                 MOVE EMP-ID OF REG-EMPLOYEE
-                   TO TB-ID(WS-EMP-COUNT)
-                 MOVE EMP-NAME OF REG-EMPLOYEE
-                   TO TB-NAME(WS-EMP-COUNT)
-                 MOVE EMP-DEP OF REG-EMPLOYEE
-                   TO TB-DEP(WS-EMP-COUNT)
-                 MOVE EMP-ROLE OF REG-EMPLOYEE
-                   TO TB-ROLE(WS-EMP-COUNT)
-                 MOVE EMP-BASE-SALARY OF REG-EMPLOYEE
-                   TO TB-BASE-SALARY(WS-EMP-COUNT)
-                 MOVE EMP-STARTED-DATE OF REG-EMPLOYEE
-                   TO TB-STARTED-DATE(WS-EMP-COUNT)
-                 MOVE EMP-STATUS OF REG-EMPLOYEE
-                   TO TB-STATUS(WS-EMP-COUNT)
+               NOT AT END PERFORM 0310-FEED-EMP-TABLE
            END-PERFORM.
+           PERFORM 0320-READ-MOVES.
        0300-END.               EXIT.
+       0310-FEED-EMP-TABLE     SECTION.
+           ADD 1 TO WS-EMP-COUNT OF WS-EMP-TABLE.
+      * MOVING FIELDS TO TABLE
+             MOVE EMP-ID OF REG-EMPLOYEE
+               TO TB-ID(WS-EMP-COUNT).
+             MOVE EMP-NAME OF REG-EMPLOYEE
+               TO TB-NAME(WS-EMP-COUNT).
+             MOVE EMP-DEP OF REG-EMPLOYEE
+               TO TB-DEP(WS-EMP-COUNT).
+             MOVE EMP-ROLE OF REG-EMPLOYEE
+               TO TB-ROLE(WS-EMP-COUNT).
+             MOVE EMP-BASE-SALARY OF REG-EMPLOYEE
+               TO TB-BASE-SALARY(WS-EMP-COUNT).
+             MOVE EMP-STARTED-DATE OF REG-EMPLOYEE
+               TO TB-STARTED-DATE(WS-EMP-COUNT).
+             MOVE EMP-STATUS OF REG-EMPLOYEE
+               TO TB-STATUS(WS-EMP-COUNT).
+       0310-END.               EXIT.
+       0320-READ-MOVES         SECTION.
+           PERFORM UNTIL END-EARQ-MOVE
+             READ EARQ-MOVES
+               AT END SET END-EARQ-MOVE TO TRUE
+               NOT AT END
+                 SEARCH ALL WS-EMP-ENTRY
+                   AT END
+                     SET RES-NOT-FOUND TO TRUE
+                     PERFORM 0330-WRITE-REJECTED
+                   WHEN TB-ID(TB-IDX) EQUALS MOV-ID
+                     PERFORM 0340-WRITE-VALID-EMP
+                 END-SEARCH
+           END-PERFORM.
+       0320-END.               EXIT.
+       0330-WRITE-REJECTED     SECTION.
+           DISPLAY "INVALID".
+       0330-END.               EXIT.
+       0340-WRITE-VALID-EMP    SECTION.
+           DISPLAY "VALID".
+       0340-END.               EXIT.
        0400-FINALIZER          SECTION.
            CLOSE EARQ-EMP 
                  EARQ-MOVES.
