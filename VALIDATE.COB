@@ -28,20 +28,25 @@
 
        DATA                DIVISION.
        FILE                SECTION.
+      * LAYOUT IS 92 POSITIONS
          FD EARQ-EMP.
            COPY ".\BOOKS\MASTER_EMP".
-
+      * LAYOUT IS 67
          FD SARQ-REJECTED-REG.
            COPY ".\BOOKS\REJECTED_EMP".
-
+      * LAYOUT IS 92 POSITIONS
          FD SARQ-VALIDATED-EMP.
            COPY ".\BOOKS\VALIDATED_EMP".
 
        WORKING-STORAGE     SECTION.
       * FILE STATUS VARIABLES
-       01 FS-EARQ-EMP           PIC 9(02).
-       01 FS-SARQ-REJECTED-REG  PIC 9(02).
-       01 FS-SARQ-VALIDATED-EMP PIC 9(02).
+       01 FS-EARQ-EMP              PIC 9(02).
+       01 FS-SARQ-REJECTED-REG     PIC 9(02).
+       01 FS-SARQ-VALIDATED-EMP    PIC 9(02).
+
+       01 WS-END-EARQ-EMP          PIC X(01).
+         88 END-EARQ-EMP            VALUE 'Y'.
+         88 NOT-END-EARQ-EMP        VALUE 'N'.
 
        PROCEDURE           DIVISION.
        0100-MAIN           SECTION.
@@ -61,8 +66,11 @@
            END-IF.
        0200-END.           EXIT.
        0300-PROCESS        SECTION.
-           READ EARQ-EMP.
-           
+           PERFORM UNTIL END-EARQ-EMP
+             READ EARQ-EMP
+               AT END SET END-EARQ-EMP TO TRUE
+               NOT AT END DISPLAY REG-EMPLOYEE
+           END-PERFORM.
        0300-END.           EXIT.
        0400-FINALIZER      SECTION.
            CLOSE EARQ-EMP.
