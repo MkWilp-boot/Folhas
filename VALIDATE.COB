@@ -37,5 +37,18 @@
        01 FS-SARQ-VALIDATED-EMP PIC 9(02).
 
        PROCEDURE           DIVISION.
-           DISPLAY "ALO".
-           STOP RUN.
+       0100-MAIN           SECTION.
+           PERFORM 0200-INIT.
+           PERFORM 0300-PROCESS.
+           PERFORM 0400-FINALIZER.
+           GOBACK.
+       0100-END.           EXIT.
+       0200-INIT           SECTION.
+           DISPLAY "INIT".
+       0200-END.           EXIT.
+       0300-PROCESS        SECTION.
+           DISPLAY "PROCESS".
+       0300-END.           EXIT.
+       0400-FINALIZER      SECTION.
+           DISPLAY "FINALIZER".
+       0400-END.           EXIT.
