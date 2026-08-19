@@ -52,13 +52,31 @@
        01 FS-EARQ-MOVES            PIC 9(02).
        01 FS-SARQ-REJECTED-REG     PIC 9(02).
        01 FS-SARQ-VALIDATED-EMP    PIC 9(02).
-
+      
+      * MASTER EMPLOYEE FILE CONTROL
        01 WS-END-EARQ-EMP          PIC X(01).
          88 END-EARQ-EMP           VALUE 'Y'.
          88 NOT-END-EARQ-EMP       VALUE 'N'.
+
       * FILE HANDLING ERRORS 
-       01 WS-ERR-DESC              PIC A(30) VALUES SPACES.
-       01 WS-ERR-STATUS            PIC 9(02) VALUE ZERO.
+       01 WS-ERR-DESC      PIC A(30) VALUES SPACES.
+       01 WS-ERR-STATUS    PIC 9(02) VALUE ZERO.
+
+      * TABLES
+       01 WS-EMP-TABLE.
+         05 WS-EMP-COUNT       PIC 9(3).
+         05 WS-EMP-ENTRY       OCCURS 2 TIMES 
+                               ASCENDING KEY IS TB-ID
+                               INDEXED BY TB-IDX.
+           10 TB-ID        PIC 9(06).
+           10 TB-NAME          PIC X(40).
+           10 TB-DEP           PIC X(10).
+           10 TB-ROLE          PIC X(20).
+           10 TB-BASE-SALARY   PIC 9(7)V99 COMP-3.
+           10 TB-STARTED-DATE  PIC 9(8).
+           10 TB-STATUS        PIC X(01).
+             88 EMP-ACTIVE      VALUE "A".
+             88 EMP-INACTIVE    VALUE "I".
 
        PROCEDURE               DIVISION.
        0100-MAIN               SECTION.
@@ -72,6 +90,9 @@
            OPEN INPUT  EARQ-MOVES.
            OPEN OUTPUT SARQ-REJECTED-REG.
            OPEN OUTPUT SARQ-VALIDATED-EMP.
+
+           PERFORM 0201-VALIDATE-INPUT.
+           PERFORM 0201-VALIDATE-OUTPUT.
        0200-END.               EXIT.
        0201-VALIDATE-INPUT     SECTION.
            IF FS-EARQ-EMP NOT EQUALS ZERO
@@ -110,7 +131,23 @@
            PERFORM UNTIL END-EARQ-EMP
              READ EARQ-EMP
                AT END SET END-EARQ-EMP TO TRUE
-               NOT AT END DISPLAY REG-EMPLOYEE
+               NOT AT END
+                 ADD 1 TO WS-EMP-COUNT OF WS-EMP-TABLE
+      * MOVING FIELDS TO TABLE
+                 MOVE EMP-ID OF REG-EMPLOYEE
+                   TO TB-ID(WS-EMP-COUNT)
+                 MOVE EMP-NAME OF REG-EMPLOYEE
+                   TO TB-NAME(WS-EMP-COUNT)
+                 MOVE EMP-DEP OF REG-EMPLOYEE
+                   TO TB-DEP(WS-EMP-COUNT)
+                 MOVE EMP-ROLE OF REG-EMPLOYEE
+                   TO TB-ROLE(WS-EMP-COUNT)
+                 MOVE EMP-BASE-SALARY OF REG-EMPLOYEE
+                   TO TB-BASE-SALARY(WS-EMP-COUNT)
+                 MOVE EMP-STARTED-DATE OF REG-EMPLOYEE
+                   TO TB-STARTED-DATE(WS-EMP-COUNT)
+                 MOVE EMP-STATUS OF REG-EMPLOYEE
+                   TO TB-STATUS(WS-EMP-COUNT)
            END-PERFORM.
        0300-END.               EXIT.
        0400-FINALIZER          SECTION.
