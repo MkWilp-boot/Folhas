@@ -16,20 +16,27 @@
            ORGANIZATION IS LINE SEQUENTIAL
            FILE STATUS IS FS-EARQ-EMP.
 
-      *   SELECT SARQ-REJECTED-REG 
-      *     ASSIGN TO ".\SARQ_REJECTED_REG.TXT"
-      *     ORGANIZATION IS LINE SEQUENTIAL
-      *     FILE STATUS IS FS-SARQ-REJECTED-REG.
+         SELECT SARQ-REJECTED-REG 
+           ASSIGN TO ".\SARQ_REJECTED_REG.TXT"
+           ORGANIZATION IS LINE SEQUENTIAL
+           FILE STATUS IS FS-SARQ-REJECTED-REG.
 
-      *   SELECT SARQ-VALIDATED-EMP 
-      *     ASSIGN TO ".\SARQ_VALIDATED_EMP.DAT"
-      *     ORGANIZATION IS LINE SEQUENTIAL
-      *     FILE STATUS IS FS-SARQ-VALIDATED-EMP.
+         SELECT SARQ-VALIDATED-EMP
+           ASSIGN TO ".\SARQ_VALIDATED_EMP.DAT"
+           ORGANIZATION IS LINE SEQUENTIAL
+           FILE STATUS IS FS-SARQ-VALIDATED-EMP.
 
        DATA                DIVISION.
        FILE                SECTION.
          FD EARQ-EMP.
            COPY ".\BOOKS\MASTER_EMP".
+
+         FD SARQ-REJECTED-REG.
+           COPY ".\BOOKS\REJECTED_EMP".
+
+         FD SARQ-VALIDATED-EMP.
+           COPY ".\BOOKS\VALIDATED_EMP".
+
        WORKING-STORAGE     SECTION.
       * FILE STATUS VARIABLES
        01 FS-EARQ-EMP           PIC 9(02).
@@ -44,11 +51,19 @@
            GOBACK.
        0100-END.           EXIT.
        0200-INIT           SECTION.
-           DISPLAY "INIT".
+           OPEN INPUT EARQ-EMP.
+           IF FS-EARQ-EMP NOT EQUALS ZERO
+               DISPLAY "* ERROR"
+               DISPLAY "** COULD NOT OPEN MASTER EMPLOYEES FILE"
+               DISPLAY "** STATUS CODE WAS " FS-EARQ-EMP
+               PERFORM 0400-FINALIZER
+               GOBACK
+           END-IF.
        0200-END.           EXIT.
        0300-PROCESS        SECTION.
-           DISPLAY "PROCESS".
+           READ EARQ-EMP.
+           
        0300-END.           EXIT.
        0400-FINALIZER      SECTION.
-           DISPLAY "FINALIZER".
+           CLOSE EARQ-EMP.
        0400-END.           EXIT.
