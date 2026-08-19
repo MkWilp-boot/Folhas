@@ -1,15 +1,15 @@
-       IDENTIFICATION      DIVISION.
-       PROGRAM-ID.         VALIDATE.
-       AUTHOR.             JOAO FERNANDES.
-       DATE-WRITTEN.       19/08/2026.
-       DATE-COMPILED.      19/08/2026.
+       IDENTIFICATION          DIVISION.
+       PROGRAM-ID.             VALIDATE.
+       AUTHOR.                 JOAO FERNANDES.
+       DATE-WRITTEN.           19/08/2026.
+       DATE-COMPILED.          19/08/2026.
 
-       ENVIRONMENT         DIVISION.
-       CONFIGURATION       SECTION.
+       ENVIRONMENT             DIVISION.
+       CONFIGURATION           SECTION.
        SPECIAL-NAMES.
-         DECIMAL-POINT     IS COMMA.
+         DECIMAL-POINT         IS COMMA.
 
-       INPUT-OUTPUT        SECTION.
+       INPUT-OUTPUT            SECTION.
        FILE-CONTROL.
          SELECT EARQ-EMP 
            ASSIGN TO ".\DATAS\EARQ_EMPLOYEES.DAT"
@@ -31,8 +31,8 @@
            ORGANIZATION IS LINE SEQUENTIAL
            FILE STATUS IS FS-SARQ-VALIDATED-EMP.
 
-       DATA                DIVISION.
-       FILE                SECTION.
+       DATA                    DIVISION.
+       FILE                    SECTION.
       * LAYOUT IS 92 POSITIONS
          FD EARQ-EMP.
            COPY ".\BOOKS\MASTER_EMP".
@@ -46,7 +46,7 @@
          FD SARQ-VALIDATED-EMP.
            COPY ".\BOOKS\VALIDATED_EMP".
 
-       WORKING-STORAGE     SECTION.
+       WORKING-STORAGE         SECTION.
       * FILE STATUS VARIABLES
        01 FS-EARQ-EMP              PIC 9(02).
        01 FS-EARQ-MOVES            PIC 9(02).
@@ -56,46 +56,66 @@
        01 WS-END-EARQ-EMP          PIC X(01).
          88 END-EARQ-EMP           VALUE 'Y'.
          88 NOT-END-EARQ-EMP       VALUE 'N'.
-       
+      * FILE HANDLING ERRORS 
        01 WS-ERR-DESC              PIC A(30) VALUES SPACES.
        01 WS-ERR-STATUS            PIC 9(02) VALUE ZERO.
-       PROCEDURE           DIVISION.
-       0100-MAIN           SECTION.
+
+       PROCEDURE               DIVISION.
+       0100-MAIN               SECTION.
            PERFORM 0200-INIT.
            PERFORM 0300-PROCESS.
            PERFORM 0400-FINALIZER.
            GOBACK.
-       0100-END.           EXIT.
-       0200-INIT           SECTION.
-           OPEN INPUT EARQ-EMP.
-           OPEN INPUT EARQ-MOVES.
-
+       0100-END.               EXIT.
+       0200-INIT               SECTION.
+           OPEN INPUT  EARQ-EMP.
+           OPEN INPUT  EARQ-MOVES.
+           OPEN OUTPUT SARQ-REJECTED-REG.
+           OPEN OUTPUT SARQ-VALIDATED-EMP.
+       0200-END.               EXIT.
+       0201-VALIDATE-INPUT     SECTION.
            IF FS-EARQ-EMP NOT EQUALS ZERO
-               MOVE "MASTER EMPLOYEES FILE" TO WS-ERR-DESC
-               MOVE FS-EARQ-EMP             TO WS-ERR-STATUS
-               PERFORM 0210-INIT-FAIL
+             MOVE "MASTER EMPLOYEES FILE" TO WS-ERR-DESC
+             MOVE FS-EARQ-EMP             TO WS-ERR-STATUS
+             PERFORM 0210-INIT-FAIL
            END-IF
            
            IF FS-EARQ-MOVES NOT EQUALS ZERO
-               MOVE "MOVES FOR EMPLOYEES FILE" TO WS-ERR-DESC
-               MOVE FS-EARQ-MOVES              TO WS-ERR-STATUS
-               PERFORM 0210-INIT-FAIL
+             MOVE "MOVES FOR EMPLOYEES FILE" TO WS-ERR-DESC
+             MOVE FS-EARQ-MOVES              TO WS-ERR-STATUS
+             PERFORM 0210-INIT-FAIL
            END-IF.
-       0200-END.           EXIT.
-       0210-INIT-FAIL      SECTION.
+       0201-END.               EXIT.
+       0201-VALIDATE-OUTPUT    SECTION.
+           IF FS-SARQ-REJECTED-REG NOT EQUALS ZERO
+             MOVE "REJECTED REGISTERS" TO WS-ERR-DESC
+             MOVE FS-EARQ-EMP          TO WS-ERR-STATUS
+             PERFORM 0210-INIT-FAIL
+           END-IF
+           
+           IF FS-SARQ-VALIDATED-EMP NOT EQUALS ZERO
+             MOVE "VALIDATED EMPLOYEES"    TO WS-ERR-DESC
+             MOVE FS-EARQ-MOVES            TO WS-ERR-STATUS
+             PERFORM 0210-INIT-FAIL
+           END-IF.
+       0201-END.               EXIT.
+       0210-INIT-FAIL          SECTION.
            DISPLAY "* ERROR"
            DISPLAY "** COULD NOT OPEN " WS-ERR-DESC
            DISPLAY "** STATUS CODE WAS " WS-ERR-STATUS
            PERFORM 0400-FINALIZER
            GOBACK.
-       0210-END.           EXIT.
-       0300-PROCESS        SECTION.
+       0210-END.               EXIT.
+       0300-PROCESS            SECTION.
            PERFORM UNTIL END-EARQ-EMP
              READ EARQ-EMP
                AT END SET END-EARQ-EMP TO TRUE
                NOT AT END DISPLAY REG-EMPLOYEE
            END-PERFORM.
-       0300-END.           EXIT.
-       0400-FINALIZER      SECTION.
-           CLOSE EARQ-EMP EARQ-MOVES.
-       0400-END.           EXIT.
+       0300-END.               EXIT.
+       0400-FINALIZER          SECTION.
+           CLOSE EARQ-EMP 
+                 EARQ-MOVES.
+           CLOSE SARQ-REJECTED-REG
+                 SARQ-VALIDATED-EMP.
+       0400-END.               EXIT.
