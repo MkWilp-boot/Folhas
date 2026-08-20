@@ -39,14 +39,23 @@
       * LAYOUT IS 19 POSITIONS
          FD EARQ-MOVES.
            COPY ".\BOOKS\MOVES".
-      * LAYOUT IS 67
          FD SARQ-REJECTED-REG.
-           COPY ".\BOOKS\REJECTED_EMP".
+       01 F-FORMATTED-REJECTION PIC X(75) VALUES SPACES.
       * LAYOUT IS 92 POSITIONS
          FD SARQ-VALIDATED-EMP.
            COPY ".\BOOKS\VALIDATED_EMP".
 
        WORKING-STORAGE         SECTION.
+       01 REG-REJECTED.
+         05 REJ-ID                        PIC 9(6).
+         05 REJ-PROCESS-DATE              PIC 9(8).
+         05 REJ-REASON-COD                PIC 9(3).
+           88 RES-NOT-FOUND               VALUE 001.
+           88 RES-ABSENTE-TOO-MANY-TIMES  VALUE 002.
+           88 RES-INVALID-HOURS           VALUE 003.
+           88 RES-EMP-INACTIVE            VALUE 004.
+         05 REJ-REASON-DESC          PIC X(50).
+
       * FILE STATUS VARIABLES
        01 FS-EARQ-EMP              PIC 9(02).
        01 FS-EARQ-MOVES            PIC 9(02).
@@ -177,22 +186,29 @@
            EVALUATE TRUE
              WHEN RES-NOT-FOUND
                MOVE "FUNCIONARIO NAO ENCONTRADO NO MESTRE"
-               TO REJ-DESCRICAO-MOTIVO
+               TO REJ-REASON-DESC
              WHEN RES-ABSENTE-TOO-MANY-TIMES
                MOVE "FUNCIONARIO AUSENTE MUITAS VEZES (2+)"
-               TO REJ-DESCRICAO-MOTIVO
+               TO REJ-REASON-DESC
              WHEN RES-INVALID-HOURS
                MOVE "FUNCIONARIO COM HORAS INVALIDAS"
-               TO REJ-DESCRICAO-MOTIVO
+               TO REJ-REASON-DESC
              WHEN RES-EMP-INACTIVE
                MOVE "FUNCIONARIO ATUALMENTE INATIVO"
-               TO REJ-DESCRICAO-MOTIVO
+               TO REJ-REASON-DESC
              WHEN OTHER
                MOVE "ERRO INESPERADO"
-               TO REJ-DESCRICAO-MOTIVO
+               TO REJ-REASON-DESC
            END-EVALUATE.
            MOVE FUNCTION CURRENT-DATE(1:8) TO REJ-PROCESS-DATE.
-           WRITE REG-REJECTED.
+           STRING
+             "MATRICULA: "        DELIMITED BY SIZE
+             REJ-ID               DELIMITED BY SIZE
+             " MOTIVO: "          DELIMITED BY SIZE
+             REJ-REASON-DESC DELIMITED BY SIZE
+           INTO F-FORMATTED-REJECTION.
+           DISPLAY "'" F-FORMATTED-REJECTION "'".
+           WRITE F-FORMATTED-REJECTION.
        0330-END.               EXIT.
        0340-WRITE-VALID-EMP    SECTION.
            DISPLAY "VALID".
