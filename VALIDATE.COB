@@ -205,9 +205,8 @@
              "MATRICULA: "        DELIMITED BY SIZE
              REJ-ID               DELIMITED BY SIZE
              " MOTIVO: "          DELIMITED BY SIZE
-             REJ-REASON-DESC DELIMITED BY SIZE
+             REJ-REASON-DESC      DELIMITED BY SIZE
            INTO F-FORMATTED-REJECTION.
-           DISPLAY "'" F-FORMATTED-REJECTION "'".
            WRITE F-FORMATTED-REJECTION.
        0330-END.               EXIT.
        0340-WRITE-VALID-EMP    SECTION.
