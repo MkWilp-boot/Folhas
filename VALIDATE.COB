@@ -12,7 +12,7 @@
 
        INPUT-OUTPUT            SECTION.
        FILE-CONTROL.
-         SELECT EARQ-EMP 
+         SELECT EARQ-MASTER-EMP 
            ASSIGN TO ".\DATAS\EARQ_EMPLOYEES.DAT"
            ORGANIZATION IS LINE SEQUENTIAL
            FILE STATUS IS FS-EARQ-EMP.
@@ -32,11 +32,14 @@
            ORGANIZATION IS LINE SEQUENTIAL
            FILE STATUS IS FS-SARQ-VALIDATED-EMP.
 
+         SELECT SD-EMP-SORT
+           ASSIGN TO ".\DATAS\WORK_EMP_SORT.TMP".
+
        DATA                    DIVISION.
        FILE                    SECTION.
 
       * LAYOUT IS 92 POSITIONS
-       FD EARQ-EMP.
+       FD EARQ-MASTER-EMP.
          COPY ".\BOOKS\MASTER_EMP".
 
       * LAYOUT IS 19 POSITIONS
@@ -49,6 +52,18 @@
       * LAYOUT IS 92 POSITIONS
        FD SARQ-VALIDATED-EMP.
          COPY ".\BOOKS\VALIDATED_EMP".
+
+      * WORK RECORD USED ONLY 
+      * DURING THE SORT OF EARQ-MATER-EMP BY EMP-ID
+       SD SD-EMP-SORT.
+       01 SD-EMP-RECORD.
+         05 SD-EMP-ID            PIC 9(6).
+         05 SD-EMP-NAME          PIC X(40).
+         05 SD-EMP-DEP           PIC X(10).
+         05 SD-EMP-ROLE          PIC X(20).
+         05 SD-EMP-BASE-SALARY   PIC 9(7)V99 COMP-3.
+         05 SD-EMP-STARTED-DATE  PIC 9(8).
+         05 SD-EMP-STATUS        PIC X(01).
 
        WORKING-STORAGE         SECTION.
        01 REG-REJECTED.
@@ -69,12 +84,17 @@
       
       * MASTER EMPLOYEE FILE CONTROL
        01 WS-END-EARQ-EMP          PIC X(01).
-         88 END-EARQ-EMP           VALUE 'Y'.
+         88 END-EARQ-MASTER-EMP    VALUE 'Y'.
          88 NOT-END-EARQ-EMP       VALUE 'N'.
 
        01 WS-END-EARQ-MOVE         PIC X(01).
          88 END-EARQ-MOVE          VALUE 'Y'.
          88 NOT-END-EARQ-MOVE      VALUE 'N'.
+
+      * SORT OUTPUT PROCEDURE CONTROL (RETURN FROM SD-EMP-SORT)
+       01 WS-END-SORTED-EMP        PIC X(01).
+         88 END-SORTED-EMP         VALUE 'Y'.
+         88 NOT-END-SORTED-EMP     VALUE 'N'.
 
       * FILE HANDLING ERRORS 
        01 WS-ERR-DESC      PIC A(30) VALUES SPACES.
@@ -82,8 +102,8 @@
 
       * TABLES
        01 WS-EMP-TABLE.
-         05 WS-EMP-COUNT       PIC 9(3) VALUE ZERO.
-         05 WS-EMP-ENTRY       OCCURS 1 TO 500 TIMES
+         05 WS-EMP-COUNT       PIC 9(5) VALUE ZERO.
+         05 WS-EMP-ENTRY       OCCURS 1 TO 30000 TIMES
                                DEPENDING ON WS-EMP-COUNT
                                ASCENDING KEY IS TB-ID
                                INDEXED BY TB-IDX.
@@ -105,7 +125,7 @@
            GOBACK.
        0100-END.               EXIT.
        0200-INIT               SECTION.
-           OPEN INPUT  EARQ-EMP.
+           OPEN INPUT  EARQ-MASTER-EMP.
            OPEN INPUT  EARQ-MOVES.
            OPEN OUTPUT SARQ-REJECTED-REG.
            OPEN OUTPUT SARQ-VALIDATED-EMP.
@@ -147,29 +167,43 @@
            GOBACK.
        0210-END.               EXIT.
        0300-PROCESS            SECTION.
-           PERFORM UNTIL END-EARQ-EMP
-             READ EARQ-EMP
-               AT END SET END-EARQ-EMP TO TRUE
-               NOT AT END PERFORM 0310-FEED-EMP-TABLE
-           END-PERFORM.
+           SORT SD-EMP-SORT
+             ON ASCENDING KEY SD-EMP-ID
+             INPUT PROCEDURE IS 0301-SORT-INPUT
+             OUTPUT PROCEDURE IS 0302-SORT-OUTPUT.
            PERFORM 0320-READ-MOVES.
        0300-END.               EXIT.
+       0301-SORT-INPUT         SECTION.
+           PERFORM UNTIL END-EARQ-MASTER-EMP
+             READ EARQ-MASTER-EMP
+               AT END SET END-EARQ-MASTER-EMP TO TRUE
+               NOT AT END
+                 RELEASE SD-EMP-RECORD FROM REG-EMPLOYEE
+           END-PERFORM.
+       0301-END.               EXIT.
+       0302-SORT-OUTPUT        SECTION.
+           PERFORM UNTIL END-SORTED-EMP
+             RETURN SD-EMP-SORT
+               AT END SET END-SORTED-EMP TO TRUE
+               NOT AT END PERFORM 0310-FEED-EMP-TABLE
+           END-PERFORM.
+       0302-END.               EXIT.
        0310-FEED-EMP-TABLE     SECTION.
            ADD 1 TO WS-EMP-COUNT OF WS-EMP-TABLE.
-      * MOVING FIELDS TO TABLE
-             MOVE EMP-ID OF REG-EMPLOYEE
+      * MOVING FIELDS TO TABLE (ALREADY SORTED BY SD-EMP-ID)
+             MOVE SD-EMP-ID
                TO TB-ID(WS-EMP-COUNT).
-             MOVE EMP-NAME OF REG-EMPLOYEE
+             MOVE SD-EMP-NAME
                TO TB-NAME(WS-EMP-COUNT).
-             MOVE EMP-DEP OF REG-EMPLOYEE
+             MOVE SD-EMP-DEP
                TO TB-DEP(WS-EMP-COUNT).
-             MOVE EMP-ROLE OF REG-EMPLOYEE
+             MOVE SD-EMP-ROLE
                TO TB-ROLE(WS-EMP-COUNT).
-             MOVE EMP-BASE-SALARY OF REG-EMPLOYEE
+             MOVE SD-EMP-BASE-SALARY
                TO TB-BASE-SALARY(WS-EMP-COUNT).
-             MOVE EMP-STARTED-DATE OF REG-EMPLOYEE
+             MOVE SD-EMP-STARTED-DATE
                TO TB-STARTED-DATE(WS-EMP-COUNT).
-             MOVE EMP-STATUS OF REG-EMPLOYEE
+             MOVE SD-EMP-STATUS
                TO TB-STATUS(WS-EMP-COUNT).
        0310-END.               EXIT.
        0320-READ-MOVES         SECTION.
@@ -233,7 +267,7 @@
            WRITE VALID-EMPLOYEE.
        0340-END.               EXIT.
        0400-FINALIZER          SECTION.
-           CLOSE EARQ-EMP 
+           CLOSE EARQ-MASTER-EMP 
                  EARQ-MOVES.
            CLOSE SARQ-REJECTED-REG
                  SARQ-VALIDATED-EMP.
