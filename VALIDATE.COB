@@ -111,7 +111,7 @@
            OPEN OUTPUT SARQ-VALIDATED-EMP.
 
            PERFORM 0201-VALIDATE-INPUT.
-           PERFORM 0201-VALIDATE-OUTPUT.
+           PERFORM 0202-VALIDATE-OUTPUT.
        0200-END.               EXIT.
        0201-VALIDATE-INPUT     SECTION.
            IF FS-EARQ-EMP NOT EQUALS ZERO
@@ -126,19 +126,19 @@
              PERFORM 0210-INIT-FAIL
            END-IF.
        0201-END.               EXIT.
-       0201-VALIDATE-OUTPUT    SECTION.
+       0202-VALIDATE-OUTPUT    SECTION.
            IF FS-SARQ-REJECTED-REG NOT EQUALS ZERO
              MOVE "REJECTED REGISTERS" TO WS-ERR-DESC
-             MOVE FS-EARQ-EMP          TO WS-ERR-STATUS
+             MOVE FS-SARQ-REJECTED-REG TO WS-ERR-STATUS
              PERFORM 0210-INIT-FAIL
            END-IF
            
            IF FS-SARQ-VALIDATED-EMP NOT EQUALS ZERO
              MOVE "VALIDATED EMPLOYEES"    TO WS-ERR-DESC
-             MOVE FS-EARQ-MOVES            TO WS-ERR-STATUS
+             MOVE FS-SARQ-VALIDATED-EMP    TO WS-ERR-STATUS
              PERFORM 0210-INIT-FAIL
            END-IF.
-       0201-END.               EXIT.
+       0202-END.               EXIT.
        0210-INIT-FAIL          SECTION.
            DISPLAY "* ERROR"
            DISPLAY "** COULD NOT OPEN " WS-ERR-DESC
