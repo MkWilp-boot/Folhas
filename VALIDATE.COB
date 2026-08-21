@@ -1,8 +1,9 @@
        IDENTIFICATION          DIVISION.
        PROGRAM-ID.             VALIDATE.
        AUTHOR.                 JOAO FERNANDES.
+      *------------------------DD/MM/YYYY.
        DATE-WRITTEN.           19/08/2026.
-       DATE-COMPILED.          19/08/2026.
+       DATE-COMPILED.          21/08/2026.
 
        ENVIRONMENT             DIVISION.
        CONFIGURATION           SECTION.
@@ -27,23 +28,27 @@
            FILE STATUS IS FS-SARQ-REJECTED-REG.
 
          SELECT SARQ-VALIDATED-EMP
-           ASSIGN TO ".\SARQ_VALIDATED_EMP.DAT"
+           ASSIGN TO ".\DATAS\SARQ_VALIDATED_EMP.DAT"
            ORGANIZATION IS LINE SEQUENTIAL
            FILE STATUS IS FS-SARQ-VALIDATED-EMP.
 
        DATA                    DIVISION.
        FILE                    SECTION.
+
       * LAYOUT IS 92 POSITIONS
-         FD EARQ-EMP.
-           COPY ".\BOOKS\MASTER_EMP".
+       FD EARQ-EMP.
+         COPY ".\BOOKS\MASTER_EMP".
+
       * LAYOUT IS 19 POSITIONS
-         FD EARQ-MOVES.
-           COPY ".\BOOKS\MOVES".
-         FD SARQ-REJECTED-REG.
+       FD EARQ-MOVES.
+         COPY ".\BOOKS\MOVES".
+      * LAYOUT IS 75 POSITIONS OF "XXXXXXXXX: {1,6} XXXXXX: {1,49}"
+       FD SARQ-REJECTED-REG.
        01 F-FORMATTED-REJECTION PIC X(75) VALUES SPACES.
+
       * LAYOUT IS 92 POSITIONS
-         FD SARQ-VALIDATED-EMP.
-           COPY ".\BOOKS\VALIDATED_EMP".
+       FD SARQ-VALIDATED-EMP.
+         COPY ".\BOOKS\VALIDATED_EMP".
 
        WORKING-STORAGE         SECTION.
        01 REG-REJECTED.
@@ -210,7 +215,22 @@
            WRITE F-FORMATTED-REJECTION.
        0330-END.               EXIT.
        0340-WRITE-VALID-EMP    SECTION.
-           DISPLAY "VALID".
+           MOVE TB-ID(TB-IDX)      
+             TO EMP-ID             OF VALID-EMPLOYEE.
+           MOVE TB-NAME(TB-IDX)
+             TO EMP-NAME           OF VALID-EMPLOYEE.
+           MOVE TB-DEP(TB-IDX)
+             TO EMP-DEP            OF VALID-EMPLOYEE.
+           MOVE TB-ROLE(TB-IDX)
+             TO EMP-ROLE           OF VALID-EMPLOYEE.
+           MOVE TB-BASE-SALARY(TB-IDX) 
+             TO EMP-BASE-SALARY    OF VALID-EMPLOYEE.
+           MOVE TB-STARTED-DATE(TB-IDX) 
+             TO EMP-STARTED-DATE   OF VALID-EMPLOYEE.
+           MOVE TB-STATUS(TB-IDX)
+             TO EMP-STATUS         OF VALID-EMPLOYEE.
+             
+           WRITE VALID-EMPLOYEE.
        0340-END.               EXIT.
        0400-FINALIZER          SECTION.
            CLOSE EARQ-EMP 
